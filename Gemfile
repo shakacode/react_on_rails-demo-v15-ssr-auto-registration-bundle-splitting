@@ -55,5 +55,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
-gem "shakapacker", "~> 8.3"
+gem "shakapacker", "~> 8.4"
 gem "react_on_rails", "~> 16.0"
