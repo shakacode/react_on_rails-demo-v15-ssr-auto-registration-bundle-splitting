@@ -1,191 +1,57 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-def installed?(process)
-  IO.popen "#{process} -v"
-rescue Errno::ENOENT
-  false
+# ReactOnRails Development Server
+#
+# This script provides a simple interface to the ReactOnRails development
+# server management. The core logic is implemented in ReactOnRails::Dev
+# classes for better maintainability and testing.
+#
+# Each command uses a specific Procfile for process management:
+# - bin/dev (default/hmr): Uses Procfile.dev
+# - bin/dev static: Uses Procfile.dev-static-assets
+# - bin/dev prod: Uses Procfile.dev-prod-assets
+#
+# To customize development environment:
+# 1. Edit the appropriate Procfile to modify which processes run
+# 2. Modify this script for project-specific command-line behavior
+# 3. Extend ReactOnRails::Dev classes in your Rails app for advanced customization
+# 4. Use classes directly: ReactOnRails::Dev::ServerManager.start(:development, "Custom.procfile")
+
+begin
+  require "bundler/setup"
+  require "react_on_rails/dev"
+rescue LoadError
+  # Fallback for when gem is not yet installed
+  puts "Loading ReactOnRails development tools..."
+  require_relative "../../lib/react_on_rails/dev"
 end
 
-def generate_packs
-  puts "📦 Generating React on Rails packs..."
-  system "bundle exec rake react_on_rails:generate_packs"
-  
-  unless $?.success?
-    puts "❌ Pack generation failed"
-    exit 1
-  end
-end
+# Parse verbose flag
+verbose = ARGV.include?("--verbose") || ARGV.include?("-v")
+args = ARGV.reject { |arg| arg == "--verbose" || arg == "-v" }
 
-def clean_assets
-  puts "🧹 Cleaning old Shakapacker assets..."
-  system "bundle exec rake shakapacker:clobber"
-  
-  unless $?.success?
-    puts "⚠️  Asset cleanup failed, continuing anyway..."
-  else
-    puts "✅ Old assets cleaned successfully"
-  end
-end
+# Set environment variable for verbose mode
+ENV["VERBOSE"] = "true" if verbose
 
-def run_production_assets
-  puts "🏭 Starting development server with production assets..."
-  puts "   - Cleaning old assets with Shakapacker"
-  puts "   - Generating React on Rails packs"
-  puts "   - Precompiling assets with production optimizations"
-  puts "   - Running Rails server on port 3001 (development environment)"
-  puts "   - SSL automatically disabled (development environment)"
-  puts "   - No HMR (Hot Module Replacement)"
-  puts "   - CSS extracted to separate files (no FOUC)"
-  puts "   - Using overmind/foreman for process management"
-  puts ""
-  puts "💡 Access at: http://localhost:3001"
-  puts ""
-  
-  # Clean old assets first
-  clean_assets
-  
-  # Generate React on Rails packs first
-  generate_packs
-  
-  # Precompile assets in production mode for optimization
-  puts "🔨 Precompiling assets with production optimizations..."
-  system "RAILS_ENV=production NODE_ENV=production bundle exec rails assets:precompile"
-  
-  if $?.success?
-    puts "✅ Assets precompiled successfully"
-    puts "🚀 Starting processes with development environment..."
-    puts "   (Using production-optimized assets but development Rails config)"
-    puts ""
-    puts "🔒 SSL automatically disabled (development environment)"
-    puts ""
-    
-    if installed? "overmind"
-      system "RAILS_ENV=development overmind start -f Procfile.dev-prod-assets"
-    elsif installed? "foreman"
-      system "RAILS_ENV=development foreman start -f Procfile.dev-prod-assets"
-    else
-      puts "⚠️  overmind/foreman not found, falling back to direct Rails server..."
-      puts "   For production apps with background jobs, install overmind or foreman"
-      puts ""
-      puts "Press Ctrl+C to stop the server"
-      puts ""
-      system "RAILS_ENV=development bundle exec rails server -p 3001"
-    end
-  else
-    puts "❌ Asset precompilation failed"
-    exit 1
-  end
-rescue Errno::ENOENT
-  warn <<~MSG
-    ERROR:
-    Please ensure `Procfile.dev-prod-assets` exists in your project!
-  MSG
-  exit!
-end
-
-def run_dev_assets
-  puts "⚡ Starting development server with development assets..."
-  puts "   - Generating React on Rails packs"
-  puts "   - Using shakapacker --watch (no HMR)"
-  puts "   - CSS extracted to separate files (no FOUC)"
-  puts "   - Development environment (source maps, faster builds)"
-  puts "   - Auto-recompiles on file changes"
-  puts ""
-  puts "💡 Access at: http://localhost:3000"
-  puts ""
-  
-  # Generate React on Rails packs first
-  generate_packs
-  
-  if installed? "overmind"
-    system "overmind start -f Procfile.dev-static-assets"
-  elsif installed? "foreman"
-    system "foreman start -f Procfile.dev-static-assets"
-  else
-    warn <<~MSG
-      NOTICE:
-      For this script to run, you need either 'overmind' or 'foreman' installed on your machine. Please try this script after installing one of them.
-    MSG
-    exit!
-  end
-rescue Errno::ENOENT
-  warn <<~MSG
-    ERROR:
-    Please ensure `Procfile.dev-static-assets` exists in your project!
-  MSG
-  exit!
-end
-
-def run_development(process)
-  generate_packs
-  
-  system "#{process} start -f Procfile.dev"
-rescue Errno::ENOENT
-  warn <<~MSG
-    ERROR:
-    Please ensure `Procfile.dev` exists in your project!
-  MSG
-  exit!
-end
-
-# Check for arguments
-if ARGV[0] == "prod-assets"
-  run_production_assets
-elsif ARGV[0] == "dev-assets"
-  run_dev_assets
-elsif ARGV[0] == "help" || ARGV[0] == "--help" || ARGV[0] == "-h"
-  puts <<~HELP
-    Usage: bin/dev [command]
-    
-    Commands:
-      (none) / hmr        Start development server with HMR (default)
-      dev-assets          Start development server with development assets (no HMR, no FOUC)  
-      prod-assets         Start development server with production assets (optimized)
-      help                Show this help message
-      
-    HMR Development mode (default):
-    • Hot Module Replacement (HMR) enabled
-    • Automatic React on Rails pack generation
-    • Source maps for debugging
-    • May have Flash of Unstyled Content (FOUC)
-    • Fast recompilation
-    • Access at: http://localhost:3000
-    
-    Development assets mode:
-    • No HMR (development assets with auto-recompilation)
-    • Automatic React on Rails pack generation
-    • CSS extracted to separate files (no FOUC)
-    • Development environment (faster builds, source maps)
-    • Auto-recompiles on file changes
-    • Access at: http://localhost:3000
-    
-    Production assets mode:
-    • Automatic Shakapacker asset cleaning (rake shakapacker:clobber)
-    • Automatic React on Rails pack generation
-    • Production-optimized, minified bundles
-    • Extracted CSS files (no FOUC)
-    • Development Rails environment (SSL disabled, no config issues)
-    • Uses overmind/foreman for process management (supports Sidekiq, Redis, etc.)
-    • Optimized for performance testing
-    • Access at: http://localhost:3001
-  HELP
-elsif ARGV[0] == "hmr" || ARGV[0].nil?
-  # Default development mode (HMR)
-  if installed? "overmind"
-    run_development "overmind"
-  elsif installed? "foreman"
-    run_development "foreman"
-  else
-    warn <<~MSG
-      NOTICE:
-      For this script to run, you need either 'overmind' or 'foreman' installed on your machine. Please try this script after installing one of them.
-    MSG
-    exit!
-  end
+# Main execution
+case args[0]
+when "production-assets", "prod"
+  ReactOnRails::Dev::ServerManager.start(:production_like)
+when "static"
+  ReactOnRails::Dev::ServerManager.start(:static, "Procfile.dev-static-assets")
+when "kill"
+  ReactOnRails::Dev::ServerManager.kill_processes
+when "help", "--help", "-h"
+  ReactOnRails::Dev::ServerManager.show_help
+when "hmr", nil
+  ReactOnRails::Dev::ServerManager.start(:development, "Procfile.dev")
 else
-  # Unknown argument
-  puts "Unknown argument: #{ARGV[0]}"
-  puts "Run 'bin/dev help' for usage information"
-  exit 1
+  if args[0]
+    puts "Unknown argument: #{args[0]}"
+    puts "Run 'bin/dev help' for usage information"
+    exit 1
+  else
+    ReactOnRails::Dev::ServerManager.start(:development, "Procfile.dev")
+  end
 end

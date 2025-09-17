@@ -3,6 +3,12 @@
 # See https://github.com/shakacode/react_on_rails/blob/master/docs/guides/configuration.md
 # for many more options.
 
+# UPGRADE NOTE: After upgrading react_on_rails, consider running the generator again
+# to get the latest configuration options and files (like bin/dev):
+# rails generate react_on_rails:install
+# Carefully review any changes and apply them selectively to avoid overwriting
+# your custom configurations.
+
 ReactOnRails.configure do |config|
   # This configures the script to run to build the production assets by webpack. Set this to nil
   # if you don't want react_on_rails building this file for you.
@@ -20,7 +26,7 @@ ReactOnRails.configure do |config|
   #
   # ReactOnRails::TestHelper.configure_rspec_to_compile_assets(config)
   #
-  # with rspec then this controls what yarn command is run
+  # with rspec then this controls what npm command is run
   # to automatically refresh your webpack assets on every test run.
   #
   # Alternately, you can remove the `ReactOnRails::TestHelper.configure_rspec_to_compile_assets`

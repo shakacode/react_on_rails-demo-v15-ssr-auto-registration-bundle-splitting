@@ -18,7 +18,9 @@ module.exports = function (api) {
       ]
     ].filter(Boolean),
     plugins: [
-      process.env.WEBPACK_SERVE && 'react-refresh/babel',
+      // Enable React Refresh (Fast Refresh) only when webpack-dev-server is running (HMR mode)
+      // This prevents React Refresh from trying to connect when using static compilation
+      !isProductionEnv && process.env.WEBPACK_SERVE && 'react-refresh/babel',
       isProductionEnv && ['babel-plugin-transform-react-remove-prop-types',
         {
           removeImport: true

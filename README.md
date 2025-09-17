@@ -86,9 +86,6 @@ cd react_on_rails-demo-v15-ssr-auto-registration-bundle-splitting
 # Install dependencies
 bundle install && npm install
 
-# Generate component webpack entries
-bundle exec rake react_on_rails:generate_packs
-
 # Start development server
 ./bin/dev
 
@@ -105,10 +102,24 @@ open http://localhost:3000
 
 - **`./bin/dev`** - Start development server (3 modes available)
   - `./bin/dev` - HMR mode (default, may have FOUC)
-  - `./bin/dev static` - Static mode (no FOUC, no HMR) 
+  - `./bin/dev static` - Static mode (no FOUC, no HMR)
   - `./bin/dev prod` - Production-optimized mode (port 3001)
-- **`bundle exec rake react_on_rails:generate_packs`** - Regenerate webpack entries
+- **`bundle exec rake react_on_rails:generate_packs`** - Regenerate webpack entries (now with enhanced error display)
 - **`./bin/dev help`** - Show all available modes
+
+## 🔄 Upgrading React on Rails
+
+After upgrading to a new major version, run the generator to get latest defaults:
+
+```bash
+rails generate react_on_rails:install
+```
+
+**Important**: Review changes carefully before applying to avoid overwriting custom configurations. The generator updates:
+- `bin/dev` (improved development workflow)
+- webpack configurations
+- shakapacker.yml settings
+- other configuration files
 
 ## 🎯 Key Architectural Concepts
 
@@ -146,6 +157,21 @@ This sample application **fixes a critical bug** in the official React on Rails 
 
 **Perfect for**: Learning React on Rails v15, understanding bundle splitting, or using as a reference implementation.
 
+## 🔧 Troubleshooting
+
+### Socket Path Too Long Error
+
+If you see this error:
+```
+error connecting to /private/tmp/tmux-501/overmind-react-on-rails-demo-v15... (File name too long)
+```
+
+**Solution**: The project directory name is too long for tmux socket paths. We've included a `.overmind.env` file with shorter paths, but if you still encounter issues:
+
+1. The `.overmind.env` file sets: `OVERMIND_SOCKET=/tmp/ror-demo.sock` and `OVERMIND_TITLE=ror-demo`
+2. Alternative: Set environment variables manually: `export OVERMIND_SOCKET=/tmp/ror.sock`
+3. Or use foreman instead: `gem install foreman && foreman start -f Procfile.dev`
+
 ---
 
-**⭐ Star this project if it helped you fix the React on Rails installation issue!**
+**⭐ Star this project if it helped you!**
