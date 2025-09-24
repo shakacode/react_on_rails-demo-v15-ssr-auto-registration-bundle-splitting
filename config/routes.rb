@@ -11,6 +11,6 @@ Rails.application.routes.draw do
 
   # React on Rails demo routes
   root "hello_world#index"
-  get 'hello_world', to: 'hello_world#index'
-  get 'heavy_markdown_editor', to: 'heavy_markdown_editor#index'
+  get "hello_world", to: "hello_world#index"
+  get "heavy_markdown_editor", to: "heavy_markdown_editor#index"
 end
